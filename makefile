@@ -1,6 +1,6 @@
 all: run
 build:
-	@go build -o bin/kdfs
+	@go build -gcflags="-m" -o bin/kdfs
 run: build
 	@./bin/kdfs
 test:

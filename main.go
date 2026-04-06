@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -16,7 +15,7 @@ func main() {
 	custom_error.Check(err)
 	defer f.Close()
 
-	sb := &metadata.Superblock{
+	sb := metadata.Superblock{
 		MagicNumber:      0xDEADAAA,
 		BlockSize:        4096,
 		InodeCount:       128,
@@ -25,10 +24,9 @@ func main() {
 		DataRegionOffset: 16384,
 	}
 
-	nWrite, err := metadata.WriteSuperblock(f, sb, 24)
+	_, err = metadata.WriteSuperblock(f, &sb)
 	custom_error.Check(err)
 
-	fmt.Println("bytes written:", nWrite)
-	fmt.Printf("%+v\n", metadata.ReadSuperblock(f, 0, 24))
+	_ = metadata.ReadSuperblock(f, 0)
 
 }

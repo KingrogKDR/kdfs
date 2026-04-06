@@ -9,6 +9,17 @@ import (
 
 // encoding/binary ignores unexported fields
 
+const (
+	SuperblockSize = 24
+
+	MagicOffset     = 0
+	BlockSizeOffset = 4
+	InodeOffset     = 8
+	BitmapOffsetOff = 12
+	InodeTableOff   = 16
+	DataRegionOff   = 20
+)
+
 type Superblock struct {
 	MagicNumber      uint32
 	BlockSize        uint32
@@ -18,32 +29,33 @@ type Superblock struct {
 	DataRegionOffset uint32
 }
 
-func ReadSuperblock(f *os.File, offset int64, bufSize int) Superblock {
-	readBuf := make([]byte, bufSize)
+func ReadSuperblock(f *os.File, offset int64) Superblock {
+	readBuf := make([]byte, SuperblockSize)
 
 	_, err := f.ReadAt(readBuf, offset)
 	custom_error.Check(err)
 
 	sbRead := Superblock{
-		MagicNumber:      binary.LittleEndian.Uint32(readBuf[0:]),
-		BlockSize:        binary.LittleEndian.Uint32(readBuf[4:]),
-		InodeCount:       binary.LittleEndian.Uint32(readBuf[8:]),
-		BitmapOffset:     binary.LittleEndian.Uint32(readBuf[12:]),
-		InodeTableOffset: binary.LittleEndian.Uint32(readBuf[16:]),
-		DataRegionOffset: binary.LittleEndian.Uint32(readBuf[20:]),
+		MagicNumber:      binary.LittleEndian.Uint32(readBuf[0:4]),
+		BlockSize:        binary.LittleEndian.Uint32(readBuf[4:8]),
+		InodeCount:       binary.LittleEndian.Uint32(readBuf[8:12]),
+		BitmapOffset:     binary.LittleEndian.Uint32(readBuf[12:16]),
+		InodeTableOffset: binary.LittleEndian.Uint32(readBuf[16:20]),
+		DataRegionOffset: binary.LittleEndian.Uint32(readBuf[20:24]),
 	}
 
 	return sbRead
 }
 
-func WriteSuperblock(f *os.File, sb *Superblock, bufSize int) (int, error) {
-	buf := make([]byte, 24)
-	binary.LittleEndian.PutUint32(buf[0:], sb.MagicNumber)
-	binary.LittleEndian.PutUint32(buf[4:], sb.BlockSize)
-	binary.LittleEndian.PutUint32(buf[8:], sb.InodeCount)
-	binary.LittleEndian.PutUint32(buf[12:], sb.BitmapOffset)
-	binary.LittleEndian.PutUint32(buf[16:], sb.InodeTableOffset)
-	binary.LittleEndian.PutUint32(buf[20:], sb.DataRegionOffset)
+func WriteSuperblock(f *os.File, sb *Superblock) (int, error) {
+	buf := make([]byte, SuperblockSize)
+
+	binary.LittleEndian.PutUint32(buf[MagicOffset:], sb.MagicNumber)
+	binary.LittleEndian.PutUint32(buf[BlockSizeOffset:], sb.BlockSize)
+	binary.LittleEndian.PutUint32(buf[InodeOffset:], sb.InodeCount)
+	binary.LittleEndian.PutUint32(buf[BitmapOffsetOff:], sb.BitmapOffset)
+	binary.LittleEndian.PutUint32(buf[InodeTableOff:], sb.InodeTableOffset)
+	binary.LittleEndian.PutUint32(buf[DataRegionOff:], sb.DataRegionOffset)
 
 	nBytes, err := f.WriteAt(buf, 0)
 	return nBytes, err
