@@ -29,7 +29,7 @@ func ceilDiv(a, b uint32) uint32 {
 
 func ComputeLayout(d Disk, inodeCount, inodeSize uint32) (*Layout, error) {
 	if d.BlockSize == 0 || d.BlockCount == 0 {
-		return nil, custom_error.ErrCorruptData
+		return nil, custom_error.Corrupt("compute layout", "no space assigned to disk")
 	}
 
 	totalBlocks := d.BlockCount
@@ -48,7 +48,7 @@ func ComputeLayout(d Disk, inodeCount, inodeSize uint32) (*Layout, error) {
 	if dataStart >= totalBlocks {
 		return nil, fmt.Errorf(
 			"layout exceeds disk: dataStart=%d totalBlocks=%d: %w",
-			dataStart, totalBlocks, custom_error.ErrCorruptData,
+			dataStart, totalBlocks, custom_error.Corrupt("compute layout", "invalid layout, exceeds disk capacity"),
 		)
 	}
 

@@ -12,13 +12,16 @@ import (
 const (
 	inodeCount uint32 = 128
 	inodeSize  uint32 = 128
+	bitmapSize int    = 320
 )
 
 func main() {
 	path := filepath.Join("disk.img")
 
 	f, err := os.OpenFile(path, os.O_RDWR, 0644)
-	custom_error.Check(custom_error.Wrap("open", path, err))
+	if err != nil {
+		custom_error.Check(custom_error.WrapIO("open disk", path, err))
+	}
 	defer f.Close()
 
 	disk := metadata.Disk{
@@ -46,9 +49,20 @@ func main() {
 	_, err = metadata.WriteSuperblock(f, &sb)
 	custom_error.Check(err)
 
-	sbRead, err := metadata.ReadSuperblock(f, 0)
-	custom_error.Check(err)
+	bm := metadata.Bitmap{
+		Data:      make([]byte, bitmapSize),
+		DataStart: sb.DataStart,
+	}
 
-	fmt.Printf("%+v\n", sbRead)
+	bm.SetMetaBlocks()
 
+	if err := bm.FreeBit(2); err != nil {
+		custom_error.Check(err)
+	}
+
+	if err = bm.WriteToFile(f, sb.BitmapStart*sb.BlockSize); err != nil {
+		custom_error.Check(err)
+	}
+
+	fmt.Println("Bitmap stored in file")
 }

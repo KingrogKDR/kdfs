@@ -10,7 +10,7 @@ import (
 // encoding/binary ignores unexported fields
 
 const (
-	SuperblockSize = 28 // 7 fields × 4 bytes
+	SuperblockSize = 28 // 7 fields × 4 bytes (uint32)
 
 	MagicOffset      = 0
 	BlockSizeOffset  = 4
@@ -41,7 +41,7 @@ func ReadSuperblock(f *os.File, offset int64) (Superblock, error) {
 
 	_, err := f.ReadAt(buf, offset)
 	if err != nil {
-		return Superblock{}, custom_error.Wrap("read superblock", f.Name(), err)
+		return Superblock{}, custom_error.WrapIO("read superblock", f.Name(), err)
 	}
 
 	sb := Superblock{
@@ -70,7 +70,7 @@ func WriteSuperblock(f *os.File, sb *Superblock) (int, error) {
 
 	nBytes, err := f.WriteAt(buf, 0)
 	if err != nil {
-		return 0, custom_error.Wrap("write superblock", f.Name(), err)
+		return 0, custom_error.WrapIO("write superblock", f.Name(), err)
 	}
 	return nBytes, nil
 }
