@@ -1,0 +1,1 @@
+dd if=/dev/zero of=disk.img bs=4096 count=2560

@@ -10,41 +10,51 @@ import (
 // encoding/binary ignores unexported fields
 
 const (
-	SuperblockSize = 24
+	SuperblockSize = 28 // 7 fields × 4 bytes
 
-	MagicOffset     = 0
-	BlockSizeOffset = 4
-	InodeOffset     = 8
-	BitmapOffsetOff = 12
-	InodeTableOff   = 16
-	DataRegionOff   = 20
+	MagicOffset      = 0
+	BlockSizeOffset  = 4
+	BlockCountOffset = 8
+	InodeCountOffset = 12
+	BitmapStartOff   = 16
+	InodeStartOff    = 20
+	DataStartOff     = 24
+
+	MagicFs = 0xDEADAAA
 )
 
 type Superblock struct {
-	MagicNumber      uint32
-	BlockSize        uint32
-	InodeCount       uint32
-	BitmapOffset     uint32
-	InodeTableOffset uint32
-	DataRegionOffset uint32
+	MagicNumber uint32
+
+	BlockSize  uint32
+	BlockCount uint32
+
+	InodeCount uint32
+
+	BitmapStart uint32
+	InodeStart  uint32
+	DataStart   uint32
 }
 
-func ReadSuperblock(f *os.File, offset int64) Superblock {
-	readBuf := make([]byte, SuperblockSize)
+func ReadSuperblock(f *os.File, offset int64) (Superblock, error) {
+	buf := make([]byte, SuperblockSize)
 
-	_, err := f.ReadAt(readBuf, offset)
-	custom_error.Check(err)
-
-	sbRead := Superblock{
-		MagicNumber:      binary.LittleEndian.Uint32(readBuf[0:4]),
-		BlockSize:        binary.LittleEndian.Uint32(readBuf[4:8]),
-		InodeCount:       binary.LittleEndian.Uint32(readBuf[8:12]),
-		BitmapOffset:     binary.LittleEndian.Uint32(readBuf[12:16]),
-		InodeTableOffset: binary.LittleEndian.Uint32(readBuf[16:20]),
-		DataRegionOffset: binary.LittleEndian.Uint32(readBuf[20:24]),
+	_, err := f.ReadAt(buf, offset)
+	if err != nil {
+		return Superblock{}, custom_error.Wrap("read superblock", f.Name(), err)
 	}
 
-	return sbRead
+	sb := Superblock{
+		MagicNumber: binary.LittleEndian.Uint32(buf[MagicOffset:]),
+		BlockSize:   binary.LittleEndian.Uint32(buf[BlockSizeOffset:]),
+		BlockCount:  binary.LittleEndian.Uint32(buf[BlockCountOffset:]),
+		InodeCount:  binary.LittleEndian.Uint32(buf[InodeCountOffset:]),
+		BitmapStart: binary.LittleEndian.Uint32(buf[BitmapStartOff:]),
+		InodeStart:  binary.LittleEndian.Uint32(buf[InodeStartOff:]),
+		DataStart:   binary.LittleEndian.Uint32(buf[DataStartOff:]),
+	}
+
+	return sb, nil
 }
 
 func WriteSuperblock(f *os.File, sb *Superblock) (int, error) {
@@ -52,11 +62,15 @@ func WriteSuperblock(f *os.File, sb *Superblock) (int, error) {
 
 	binary.LittleEndian.PutUint32(buf[MagicOffset:], sb.MagicNumber)
 	binary.LittleEndian.PutUint32(buf[BlockSizeOffset:], sb.BlockSize)
-	binary.LittleEndian.PutUint32(buf[InodeOffset:], sb.InodeCount)
-	binary.LittleEndian.PutUint32(buf[BitmapOffsetOff:], sb.BitmapOffset)
-	binary.LittleEndian.PutUint32(buf[InodeTableOff:], sb.InodeTableOffset)
-	binary.LittleEndian.PutUint32(buf[DataRegionOff:], sb.DataRegionOffset)
+	binary.LittleEndian.PutUint32(buf[BlockCountOffset:], sb.BlockCount)
+	binary.LittleEndian.PutUint32(buf[InodeCountOffset:], sb.InodeCount)
+	binary.LittleEndian.PutUint32(buf[BitmapStartOff:], sb.BitmapStart)
+	binary.LittleEndian.PutUint32(buf[InodeStartOff:], sb.InodeStart)
+	binary.LittleEndian.PutUint32(buf[DataStartOff:], sb.DataStart)
 
 	nBytes, err := f.WriteAt(buf, 0)
-	return nBytes, err
+	if err != nil {
+		return 0, custom_error.Wrap("write superblock", f.Name(), err)
+	}
+	return nBytes, nil
 }

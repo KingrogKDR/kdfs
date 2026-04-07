@@ -1,6 +1,7 @@
 all: run
 build:
-	@go build -gcflags="-m" -o bin/kdfs
+	sh create_disk.sh
+	@go build -o bin/kdfs
 run: build
 	@./bin/kdfs
 test:
