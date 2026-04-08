@@ -12,13 +12,13 @@ import (
 const (
 	SuperblockSize = 28 // 7 fields × 4 bytes (uint32)
 
-	MagicOffset      = 0
-	BlockSizeOffset  = 4
-	BlockCountOffset = 8
-	InodeCountOffset = 12
-	BitmapStartOff   = 16
-	InodeStartOff    = 20
-	DataStartOff     = 24
+	magicOffset      = 0
+	blockSizeOffset  = 4
+	blockCountOffset = 8
+	knodeCountOffset = 12
+	bitmapStartOff   = 16
+	knodeStartOff    = 20
+	dataStartOff     = 24
 
 	MagicFs = 0xDEADAAA
 )
@@ -29,10 +29,10 @@ type Superblock struct {
 	BlockSize  uint32
 	BlockCount uint32
 
-	InodeCount uint32
+	KnodeCount uint32
 
 	BitmapStart uint32
-	InodeStart  uint32
+	KnodeStart  uint32
 	DataStart   uint32
 }
 
@@ -45,13 +45,13 @@ func ReadSuperblock(f *os.File, offset int64) (Superblock, error) {
 	}
 
 	sb := Superblock{
-		MagicNumber: binary.LittleEndian.Uint32(buf[MagicOffset:]),
-		BlockSize:   binary.LittleEndian.Uint32(buf[BlockSizeOffset:]),
-		BlockCount:  binary.LittleEndian.Uint32(buf[BlockCountOffset:]),
-		InodeCount:  binary.LittleEndian.Uint32(buf[InodeCountOffset:]),
-		BitmapStart: binary.LittleEndian.Uint32(buf[BitmapStartOff:]),
-		InodeStart:  binary.LittleEndian.Uint32(buf[InodeStartOff:]),
-		DataStart:   binary.LittleEndian.Uint32(buf[DataStartOff:]),
+		MagicNumber: binary.LittleEndian.Uint32(buf[magicOffset:]),
+		BlockSize:   binary.LittleEndian.Uint32(buf[blockSizeOffset:]),
+		BlockCount:  binary.LittleEndian.Uint32(buf[blockCountOffset:]),
+		KnodeCount:  binary.LittleEndian.Uint32(buf[knodeCountOffset:]),
+		BitmapStart: binary.LittleEndian.Uint32(buf[bitmapStartOff:]),
+		KnodeStart:  binary.LittleEndian.Uint32(buf[knodeStartOff:]),
+		DataStart:   binary.LittleEndian.Uint32(buf[dataStartOff:]),
 	}
 
 	return sb, nil
@@ -60,13 +60,13 @@ func ReadSuperblock(f *os.File, offset int64) (Superblock, error) {
 func WriteSuperblock(f *os.File, sb *Superblock) (int, error) {
 	buf := make([]byte, SuperblockSize)
 
-	binary.LittleEndian.PutUint32(buf[MagicOffset:], sb.MagicNumber)
-	binary.LittleEndian.PutUint32(buf[BlockSizeOffset:], sb.BlockSize)
-	binary.LittleEndian.PutUint32(buf[BlockCountOffset:], sb.BlockCount)
-	binary.LittleEndian.PutUint32(buf[InodeCountOffset:], sb.InodeCount)
-	binary.LittleEndian.PutUint32(buf[BitmapStartOff:], sb.BitmapStart)
-	binary.LittleEndian.PutUint32(buf[InodeStartOff:], sb.InodeStart)
-	binary.LittleEndian.PutUint32(buf[DataStartOff:], sb.DataStart)
+	binary.LittleEndian.PutUint32(buf[magicOffset:], sb.MagicNumber)
+	binary.LittleEndian.PutUint32(buf[blockSizeOffset:], sb.BlockSize)
+	binary.LittleEndian.PutUint32(buf[blockCountOffset:], sb.BlockCount)
+	binary.LittleEndian.PutUint32(buf[knodeCountOffset:], sb.KnodeCount)
+	binary.LittleEndian.PutUint32(buf[bitmapStartOff:], sb.BitmapStart)
+	binary.LittleEndian.PutUint32(buf[knodeStartOff:], sb.KnodeStart)
+	binary.LittleEndian.PutUint32(buf[dataStartOff:], sb.DataStart)
 
 	nBytes, err := f.WriteAt(buf, 0)
 	if err != nil {

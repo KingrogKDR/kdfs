@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	inodeCount uint32 = 128
-	inodeSize  uint32 = 128
-	bitmapSize int    = 320
+	knodeCount uint32 = 128
+	knodeSize  uint32 = 128
 )
 
 func main() {
@@ -29,17 +28,17 @@ func main() {
 		BlockCount: 2560, // ~10mb
 	}
 
-	layout, err := metadata.ComputeLayout(disk, inodeCount, inodeSize)
+	layout, err := metadata.ComputeLayout(disk, knodeCount, knodeSize)
 	custom_error.Check(err)
 
 	sb := metadata.Superblock{
 		MagicNumber: metadata.MagicFs,
 		BlockSize:   disk.BlockSize,
 		BlockCount:  disk.BlockCount,
-		InodeCount:  inodeCount,
+		KnodeCount:  knodeCount,
 
 		BitmapStart: layout.BitmapStart,
-		InodeStart:  layout.InodeStart,
+		KnodeStart:  layout.KnodeStart,
 		DataStart:   layout.DataStart,
 	}
 
@@ -49,20 +48,35 @@ func main() {
 	_, err = metadata.WriteSuperblock(f, &sb)
 	custom_error.Check(err)
 
-	bm := metadata.Bitmap{
-		Data:      make([]byte, bitmapSize),
-		DataStart: sb.DataStart,
-	}
+	bitmapSize := (sb.BlockCount + 7) / 8
+	bitmapBlock := make([]byte, bitmapSize)
 
-	bm.SetMetaBlocks()
-
-	if err := bm.FreeBit(2); err != nil {
+	_, err = f.ReadAt(bitmapBlock, int64(sb.BitmapStart*sb.BlockSize))
+	if err != nil && err.Error() != "EOF" {
 		custom_error.Check(err)
 	}
 
-	if err = bm.WriteToFile(f, sb.BitmapStart*sb.BlockSize); err != nil {
-		custom_error.Check(err)
+	knodeBitmapSize := (knodeCount + 7) / 8
+
+	_ = metadata.Bitmap{
+		Data: bitmapBlock[:knodeBitmapSize],
+		Base: 0,
 	}
 
-	fmt.Println("Bitmap stored in file")
+	_ = metadata.Bitmap{
+		Data: bitmapBlock[knodeBitmapSize:bitmapSize],
+		Base: sb.DataStart,
+	}
+
+	_ = metadata.Knode{
+		Typ:       metadata.File,
+		Size:      1024,
+		LinkCount: 10,
+		Blocks:    [12]uint32{},
+	}
+
+	_, err = f.WriteAt(bitmapBlock, int64(sb.BitmapStart*sb.BlockSize))
+	custom_error.Check(err)
+
+	fmt.Println("Bitmap written to disk")
 }

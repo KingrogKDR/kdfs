@@ -17,8 +17,8 @@ type Layout struct {
 	BitmapStart  uint32
 	BitmapBlocks uint32
 
-	InodeStart  uint32
-	InodeBlocks uint32
+	KnodeStart  uint32
+	KnodeBlocks uint32
 
 	DataStart uint32
 }
@@ -27,7 +27,7 @@ func ceilDiv(a, b uint32) uint32 {
 	return (a + b - 1) / b
 }
 
-func ComputeLayout(d Disk, inodeCount, inodeSize uint32) (*Layout, error) {
+func ComputeLayout(d Disk, knodeCount, knodeSize uint32) (*Layout, error) {
 	if d.BlockSize == 0 || d.BlockCount == 0 {
 		return nil, custom_error.Corrupt("compute layout", "no space assigned to disk")
 	}
@@ -37,13 +37,13 @@ func ComputeLayout(d Disk, inodeCount, inodeSize uint32) (*Layout, error) {
 	bitmapBytes := ceilDiv(totalBlocks, 8)
 	bitmapBlocks := ceilDiv(bitmapBytes, d.BlockSize)
 
-	inodeTableBytes := inodeCount * inodeSize
-	inodeBlocks := ceilDiv(inodeTableBytes, d.BlockSize)
+	knodeTableBytes := knodeCount * knodeSize
+	knodeBlocks := ceilDiv(knodeTableBytes, d.BlockSize)
 
 	superblockBlocks := uint32(1)
 	bitmapStart := superblockBlocks
-	inodeStart := bitmapStart + bitmapBlocks
-	dataStart := inodeStart + inodeBlocks
+	knodeStart := bitmapStart + bitmapBlocks
+	dataStart := knodeStart + knodeBlocks
 
 	if dataStart >= totalBlocks {
 		return nil, fmt.Errorf(
@@ -58,8 +58,8 @@ func ComputeLayout(d Disk, inodeCount, inodeSize uint32) (*Layout, error) {
 		BitmapStart:  bitmapStart,
 		BitmapBlocks: bitmapBlocks,
 
-		InodeStart:  inodeStart,
-		InodeBlocks: inodeBlocks,
+		KnodeStart:  knodeStart,
+		KnodeBlocks: knodeBlocks,
 
 		DataStart: dataStart,
 	}, nil
