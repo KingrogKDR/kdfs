@@ -6,7 +6,7 @@ import (
 
 // 1 block = 1 bit
 // 1 byte = 8 blocks
-// knode_bitmap : 0 -> 5
+// knode_bitmap : 2 -> 5
 // data_bitmap : 6 -> end
 // both bitmaps exist in the same block
 
@@ -18,6 +18,12 @@ type Bitmap struct {
 func (b *Bitmap) Reset() {
 	for i := range b.Data {
 		b.Data[i] = 0
+	}
+}
+
+func (b *Bitmap) ReserveMetaBlocks(dataStartBlock uint32) {
+	for i := range dataStartBlock {
+		b.setBit(i)
 	}
 }
 

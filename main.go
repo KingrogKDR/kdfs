@@ -49,24 +49,21 @@ func main() {
 	custom_error.Check(err)
 
 	bitmapSize := (sb.BlockCount + 7) / 8
-	bitmapBlock := make([]byte, bitmapSize)
+	bitmapBlocks := (bitmapSize + sb.BlockSize - 1) / sb.BlockSize
+	bitmapBytes := bitmapBlocks * sb.BlockSize
+	bitmapBlock := make([]byte, bitmapBytes)
 
 	_, err = f.ReadAt(bitmapBlock, int64(sb.BitmapStart*sb.BlockSize))
 	if err != nil && err.Error() != "EOF" {
 		custom_error.Check(err)
 	}
 
-	knodeBitmapSize := (knodeCount + 7) / 8
-
-	_ = metadata.Bitmap{
-		Data: bitmapBlock[:knodeBitmapSize],
+	bitmap := metadata.Bitmap{
+		Data: bitmapBlock,
 		Base: 0,
 	}
 
-	_ = metadata.Bitmap{
-		Data: bitmapBlock[knodeBitmapSize:bitmapSize],
-		Base: sb.DataStart,
-	}
+	bitmap.ReserveMetaBlocks(sb.DataStart)
 
 	_ = metadata.Knode{
 		Typ:       metadata.File,
@@ -74,6 +71,8 @@ func main() {
 		LinkCount: 10,
 		Blocks:    [12]uint32{},
 	}
+	fmt.Printf("%+v\n", bitmapBlock)
+	bitmap.Reset()
 
 	_, err = f.WriteAt(bitmapBlock, int64(sb.BitmapStart*sb.BlockSize))
 	custom_error.Check(err)

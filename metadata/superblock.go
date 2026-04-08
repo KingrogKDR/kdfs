@@ -10,8 +10,6 @@ import (
 // encoding/binary ignores unexported fields
 
 const (
-	SuperblockSize = 28 // 7 fields × 4 bytes (uint32)
-
 	magicOffset      = 0
 	blockSizeOffset  = 4
 	blockCountOffset = 8
@@ -36,8 +34,8 @@ type Superblock struct {
 	DataStart   uint32
 }
 
-func ReadSuperblock(f *os.File, offset int64) (Superblock, error) {
-	buf := make([]byte, SuperblockSize)
+func ReadSuperblock(f *os.File, offset int64, blockSize uint32) (Superblock, error) {
+	buf := make([]byte, blockSize)
 
 	_, err := f.ReadAt(buf, offset)
 	if err != nil {
@@ -58,7 +56,7 @@ func ReadSuperblock(f *os.File, offset int64) (Superblock, error) {
 }
 
 func WriteSuperblock(f *os.File, sb *Superblock) (int, error) {
-	buf := make([]byte, SuperblockSize)
+	buf := make([]byte, sb.BlockSize)
 
 	binary.LittleEndian.PutUint32(buf[magicOffset:], sb.MagicNumber)
 	binary.LittleEndian.PutUint32(buf[blockSizeOffset:], sb.BlockSize)

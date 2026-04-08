@@ -13,6 +13,7 @@ type KnodeType uint32
 const (
 	File KnodeType = iota
 	Dir
+	Free
 )
 
 type Knode struct {
