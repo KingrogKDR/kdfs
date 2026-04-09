@@ -48,33 +48,42 @@ func main() {
 	_, err = metadata.WriteSuperblock(f, &sb)
 	custom_error.Check(err)
 
-	bitmapSize := (sb.BlockCount + 7) / 8
-	bitmapBlocks := (bitmapSize + sb.BlockSize - 1) / sb.BlockSize
-	bitmapBytes := bitmapBlocks * sb.BlockSize
-	bitmapBlock := make([]byte, bitmapBytes)
+	dataBitmapSize := (sb.BlockCount + 7) / 8
 
-	_, err = f.ReadAt(bitmapBlock, int64(sb.BitmapStart*sb.BlockSize))
-	if err != nil && err.Error() != "EOF" {
-		custom_error.Check(err)
+	kBitmapSize := sb.BlockSize - dataBitmapSize // padding it to cover the block (4096-320)
+
+	dataBitmap := make([]byte, dataBitmapSize)
+	kBitmap := make([]byte, kBitmapSize)
+
+	dm := metadata.Bitmap{
+		Name:     "Data-Bitmap",
+		Data:     dataBitmap,
+		StartOff: sb.DataStart,
+		EndOff:   sb.BlockCount - 1,
 	}
 
-	bitmap := metadata.Bitmap{
-		Data: bitmapBlock,
-		Base: 0,
+	km := metadata.Bitmap{
+		Name:     "Knode-Bitmap",
+		Data:     kBitmap,
+		StartOff: 0,
+		EndOff:   knodeCount - 1,
 	}
 
-	bitmap.ReserveMetaBlocks(sb.DataStart)
+	dataBitmapOffset := sb.BitmapStart * sb.BlockSize
+	kBitmapOffset := dataBitmapOffset + dataBitmapSize
 
-	_ = metadata.Knode{
-		Typ:       metadata.File,
-		Size:      1024,
-		LinkCount: 10,
-		Blocks:    [12]uint32{},
-	}
-	fmt.Printf("%+v\n", bitmapBlock)
-	bitmap.Reset()
+	_, err = dm.Read(f, dataBitmapOffset)
+	custom_error.Check(err)
 
-	_, err = f.WriteAt(bitmapBlock, int64(sb.BitmapStart*sb.BlockSize))
+	_, err = km.Read(f, kBitmapOffset)
+	custom_error.Check(err)
+
+	metadata.ReserveMetaBlocks(&dm, sb.DataStart)
+
+	_, err = dm.Write(f, dataBitmapOffset)
+	custom_error.Check(err)
+
+	_, err = km.Write(f, kBitmapOffset)
 	custom_error.Check(err)
 
 	fmt.Println("Bitmap written to disk")

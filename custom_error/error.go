@@ -61,6 +61,10 @@ func NoSpace(op string) error {
 	return New(TypeNoSpace, op, "", "no free blocks available", nil)
 }
 
+func Exception(op, msg string) {
+	log.Fatalf("%s: %s", op, msg)
+}
+
 func Check(err error) {
 	if err == nil || errors.Is(err, io.EOF) {
 		return

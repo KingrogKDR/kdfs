@@ -23,6 +23,7 @@ type Knode struct {
 	Blocks    [12]uint32
 }
 
+// modified changes in a knode to be overwritten
 func (kn *Knode) WriteKnode(f *os.File, knodeStartOff, knodeIndex, knodeSize uint32) error {
 	buf := new(bytes.Buffer)
 
@@ -47,6 +48,7 @@ func (kn *Knode) WriteKnode(f *os.File, knodeStartOff, knodeIndex, knodeSize uin
 	return nil
 }
 
+// read knode content
 func (kn *Knode) ReadKnode(f *os.File, knodeStartOff, knodeIndex, knodeSize uint32) error {
 	buf := make([]byte, knodeSize)
 
