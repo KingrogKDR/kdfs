@@ -52,20 +52,20 @@ func (b *Bitmap) FreeBit(block uint32) error {
 	return nil
 }
 
-func (b *Bitmap) Read(f *os.File, offset uint32) (int, error) {
-	n, err := f.ReadAt(b.Data, int64(offset))
+func (b *Bitmap) Read(f *os.File, offset uint32) error {
+	_, err := f.ReadAt(b.Data, int64(offset))
 	if err != nil && err != io.EOF {
-		return 0, custom_error.WrapIO("read bitmap from file", b.Name, err)
+		return custom_error.WrapIO("read bitmap from file", b.Name, err)
 	}
-	return n, nil
+	return nil
 }
 
-func (b *Bitmap) Write(f *os.File, offset uint32) (int, error) {
-	n, err := f.WriteAt(b.Data, int64(offset))
+func (b *Bitmap) Write(f *os.File, offset uint32) error {
+	_, err := f.WriteAt(b.Data, int64(offset))
 	if err != nil {
-		return 0, custom_error.WrapIO("write bitmap from file", b.Name, err)
+		return custom_error.WrapIO("write bitmap from file", b.Name, err)
 	}
-	return n, nil
+	return nil
 }
 
 func (b *Bitmap) getBit(block uint32) byte {

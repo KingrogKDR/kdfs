@@ -9,11 +9,6 @@ import (
 	"github.com/KingrogKDR/kdfs/metadata"
 )
 
-const (
-	knodeCount uint32 = 128
-	knodeSize  uint32 = 128
-)
-
 func main() {
 	path := filepath.Join("disk.img")
 
@@ -28,14 +23,14 @@ func main() {
 		BlockCount: 2560, // ~10mb
 	}
 
-	layout, err := metadata.ComputeLayout(disk, knodeCount, knodeSize)
+	layout, err := metadata.ComputeLayout(disk, metadata.KnodeCount, metadata.KnodeSize)
 	custom_error.Check(err)
 
 	sb := metadata.Superblock{
 		MagicNumber: metadata.MagicFs,
 		BlockSize:   disk.BlockSize,
 		BlockCount:  disk.BlockCount,
-		KnodeCount:  knodeCount,
+		KnodeCount:  metadata.KnodeCount,
 
 		BitmapStart: layout.BitmapStart,
 		KnodeStart:  layout.KnodeStart,
@@ -55,35 +50,35 @@ func main() {
 	dataBitmap := make([]byte, dataBitmapSize)
 	kBitmap := make([]byte, kBitmapSize)
 
-	dm := metadata.Bitmap{
+	dm := &metadata.Bitmap{
 		Name:     "Data-Bitmap",
 		Data:     dataBitmap,
 		StartOff: sb.DataStart,
 		EndOff:   sb.BlockCount - 1,
 	}
 
-	km := metadata.Bitmap{
+	km := &metadata.Bitmap{
 		Name:     "Knode-Bitmap",
 		Data:     kBitmap,
 		StartOff: 0,
-		EndOff:   knodeCount - 1,
+		EndOff:   metadata.KnodeCount - 1,
 	}
 
 	dataBitmapOffset := sb.BitmapStart * sb.BlockSize
 	kBitmapOffset := dataBitmapOffset + dataBitmapSize
 
-	_, err = dm.Read(f, dataBitmapOffset)
+	err = dm.Read(f, dataBitmapOffset)
 	custom_error.Check(err)
 
-	_, err = km.Read(f, kBitmapOffset)
+	err = km.Read(f, kBitmapOffset)
 	custom_error.Check(err)
 
-	metadata.ReserveMetaBlocks(&dm, sb.DataStart)
+	metadata.ReserveMetaBlocks(dm, sb.DataStart)
 
-	_, err = dm.Write(f, dataBitmapOffset)
+	err = dm.Write(f, dataBitmapOffset)
 	custom_error.Check(err)
 
-	_, err = km.Write(f, kBitmapOffset)
+	err = km.Write(f, kBitmapOffset)
 	custom_error.Check(err)
 
 	fmt.Println("Bitmap written to disk")
