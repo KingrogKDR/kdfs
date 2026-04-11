@@ -7,8 +7,6 @@ import (
 	"github.com/KingrogKDR/kdfs/custom_error"
 )
 
-// encoding/binary ignores unexported fields
-
 const (
 	magicOffset      = 0
 	blockSizeOffset  = 4
@@ -21,6 +19,7 @@ const (
 	MagicFs = 0xDEADAAA
 )
 
+// encoding/binary ignores unexported fields
 type Superblock struct {
 	MagicNumber uint32
 
