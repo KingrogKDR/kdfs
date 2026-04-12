@@ -8,13 +8,13 @@ import (
 	"github.com/KingrogKDR/kdfs/metadata"
 )
 
-func newTestBitmap(name string, size uint32, start uint32) *metadata.Bitmap {
+func newTestBitmap(name string, size, diskOffset, start uint32) *metadata.Bitmap {
 	byteSize := (size + 7) / 8
 
 	return &metadata.Bitmap{
 		Name:       name,
 		Data:       make([]byte, byteSize),
-		DiskOffset: 0,
+		DiskOffset: diskOffset,
 		BitStart:   start,
 		BitEnd:     start + size - 1,
 	}
@@ -41,8 +41,8 @@ func TestWriteReadSingleBlock(t *testing.T) {
 	defer disk.Close()
 
 	// setup
-	km := newTestBitmap("knode", metadata.KnodeCount, 0)
-	dm := newTestBitmap("data", 3000, 6)
+	km := newTestBitmap("knode", metadata.KnodeCount, 4416, 0)
+	dm := newTestBitmap("data", 3000, 4096, 6)
 
 	knodeStart := uint32(0)
 	dataStart := uint32(6 * 4096) // example
@@ -101,8 +101,8 @@ func TestAppend(t *testing.T) {
 	defer disk.Close()
 
 	// setup
-	km := newTestBitmap("knode", metadata.KnodeCount, 0)
-	dm := newTestBitmap("data", 3000, 6)
+	km := newTestBitmap("knode", metadata.KnodeCount, 4416, 0)
+	dm := newTestBitmap("data", 3000, 4096, 6)
 
 	knodeStart := uint32(0)
 	dataStart := uint32(6 * 4096) // example
