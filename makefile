@@ -7,4 +7,4 @@ build:
 run: build
 	@./bin/kdfs
 test:
-	@go test ./ -v
+	@go test ./... -v
